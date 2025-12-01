@@ -1,0 +1,47 @@
+import { Patient } from "../../../models/patient.model";
+import { Doctor } from "../../../models/doctor.model";
+import { ApiHandler } from "../../../interfaces/api-handler";
+
+export const checkDoctorAndPatientId: ApiHandler<{
+  patientId: string;
+  doctorId: string;
+}> = async (req, res, next) => {
+  try {
+    const { patientId, doctorId } = req.body;
+
+    const invalidIds: Record<string, string[]> = {};
+    if (!patientId || patientId.length !== 24) {
+      invalidIds.patientId = ["Please enter a valid patient ID"];
+    }
+    if (!doctorId || doctorId.length !== 24) {
+      invalidIds.doctorId = ["Please enter a valid doctor ID"];
+    }
+
+    if (Object.keys(invalidIds).length > 0) {
+      return res.status(400).json({ errors: invalidIds });
+    }
+
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+      return res.status(400).json({
+        errors: {
+          patientId: ["Patient not found. Please enter a valid patient ID."],
+        },
+      });
+    }
+
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(400).json({
+        errors: {
+          doctorId: ["Doctor not found. Please enter a valid doctor ID."],
+        },
+      });
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
